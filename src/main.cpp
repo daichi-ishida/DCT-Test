@@ -6,7 +6,7 @@
 #include <fftw3.h>
 
 int nx = 4;
-int ny = 4;
+int ny = 3;
 
 void dump_vector(double *vec)
 {
@@ -23,7 +23,7 @@ void dump_vector(double *vec)
 
 void fftw_dct(double *out, double *in)
 {
-    fftw_plan plan = fftw_plan_r2r_2d(nx, ny, in, out, FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
+    fftw_plan plan = fftw_plan_r2r_2d(ny, nx, in, out, FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
     fftw_execute(plan);
 
     for (int q = 0; q < ny; ++q)
@@ -63,7 +63,7 @@ void fftw_idct(double *out, double *in)
         }
     }
 
-    fftw_plan plan = fftw_plan_r2r_2d(nx, ny, in, out, FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
+    fftw_plan plan = fftw_plan_r2r_2d(ny, nx, in, out, FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
     fftw_execute(plan);
     // N << 1 means 2*N , N << 2 means 2^2 * N
     for (int i = 0, f = nx * ny << 2; i < nx * ny; ++i)
@@ -117,13 +117,13 @@ void my_idct(double *out, double *in)
 
 int main()
 {
-    // double a[nx * ny] = {0.5, 0.6, 0.7, 0.8,
-    //                      1.5, 1.6, 1.7, 1.8,
-    //                      -0.5, -0.6, -0.7, -0.8};
-    double a[nx * ny] = {1.0, 0.0, 1.0, 0.0,
-                         1.0, 1.0, 0.0, 1.0,
-                         1.0, 0.0, 1.0, 0.0,
-                         1.0, 1.0, 0.0, 1.0};
+    double a[nx * ny] = {0.5, 0.6, 0.7, 0.8,
+                         1.5, 20.6, 8.7, 1.8,
+                         -0.5, -0.6, -2.7, -0.8};
+    // double a[nx * ny] = {1.0, 0.0, 1.0, 0.0,
+    //                      -1.0, 1.0, 0.0, -1.0,
+    //                      1.0, 0.0, 1.0, 0.0,
+    //                      1.0, 1.0, 0.0, 1.0};
     double b[nx * ny];
     printf("Original vector\n");
     dump_vector(a);
@@ -132,16 +132,16 @@ int main()
     fftw_dct(b, a);
     dump_vector(b);
 
-    printf("fftw IDCT\n");
+    // printf("fftw IDCT\n");
     fftw_idct(a, b);
-    dump_vector(a);
+    // dump_vector(a);
 
     printf("my DCT\n");
     my_dct(b, a);
     dump_vector(b);
 
-    printf("my IDCT\n");
+    // printf("my IDCT\n");
     my_idct(a, b);
-    dump_vector(a);
+    // dump_vector(a);
     return 0;
 }
