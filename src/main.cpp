@@ -18,6 +18,7 @@ void dump_vector(double *vec)
         }
         printf("\n");
     }
+    printf("\n");
 }
 
 void fftw_dct(double *out, double *in)
@@ -25,22 +26,46 @@ void fftw_dct(double *out, double *in)
     fftw_plan plan = fftw_plan_r2r_2d(nx, ny, in, out, FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
     fftw_execute(plan);
 
-    out[0] *= std::sqrt(1.0 / (4.0 * nx * ny));
-    // double f = std::sqrt(1.0 / (2.0 * nx * ny));
-    // for (int i = 1; i < nx * ny; ++i)
-    // {
-    //     out[i] *= f;
-    // }
+    for (int q = 0; q < ny; ++q)
+    {
+        for (int p = 0; p < nx; ++p)
+        {
+            if (p == 0 && q == 0)
+            {
+                out[p + q * nx] *= 0.25 * std::sqrt(1.0 / (nx * ny));
+            }
+            else if (p == 0 || q == 0)
+            {
+                out[p + q * nx] *= 0.5 * std::sqrt(1.0 / (2.0 * nx * ny));
+            }
+            else
+            {
+                out[p + q * nx] *= 0.5 * std::sqrt(1.0 / (nx * ny));
+            }
+        }
+    }
 }
 
 void fftw_idct(double *out, double *in)
 {
-    in[0] /= std::sqrt(1.0 / (4.0 * nx * ny));
-    // double f = std::sqrt(1.0 / (2.0 * nx * ny));
-    // for (int i = 1; i < nx * ny; ++i)
-    // {
-    //     in[i] /= f;
-    // }
+    for (int q = 0; q < ny; ++q)
+    {
+        for (int p = 0; p < nx; ++p)
+        {
+            if (p == 0 && q == 0)
+            {
+                in[p + q * nx] *= 4.0 * std::sqrt(nx * ny);
+            }
+            else if (p == 0 || q == 0)
+            {
+                in[p + q * nx] *= 2.0 * std::sqrt(2.0 * nx * ny);
+            }
+            else
+            {
+                in[p + q * nx] *= 2.0 * std::sqrt(nx * ny);
+            }
+        }
+    }
 
     fftw_plan plan = fftw_plan_r2r_2d(nx, ny, in, out, FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
     fftw_execute(plan);
@@ -96,7 +121,7 @@ void my_idct(double *out, double *in)
 
 int main()
 {
-    double a[nx * ny] = {0.5, 0.6, 0.7, 0.8,
+    double a[nx * ny] = {1.5, 0.6, 0.7, 0.8,
                          1.5, 1.6, 1.7, 1.8,
                          -0.5, -0.6, -0.7, -0.8};
     double b[nx * ny];
