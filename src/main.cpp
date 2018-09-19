@@ -55,10 +55,10 @@ void my_dct(double *out, double *in)
 {
     for (int q = 0; q < ny; ++q)
     {
-        double lambda_q = (q == 0) ? std::sqrt(1.0 / 2.0) : 1.0;
+        double lambda_q = (q == 0) ? std::sqrt(1.0 / ny) : std::sqrt(2.0 / ny);
         for (int p = 0; p < nx; ++p)
         {
-            double lambda_p = (p == 0) ? std::sqrt(1.0 / 2.0) : 1.0;
+            double lambda_p = (p == 0) ? std::sqrt(1.0 / nx) : std::sqrt(2.0 / nx);
             double sum = 0.0;
             for (int j = 0; j < ny; ++j)
             {
@@ -67,7 +67,7 @@ void my_dct(double *out, double *in)
                     sum += in[i + j * nx] * std::cos(M_PI * p * (2 * i + 1) / (2 * nx)) * std::cos(M_PI * q * (2 * j + 1) / (2 * ny));
                 }
             }
-            sum *= std::sqrt(2.0 / (double)nx) * std::sqrt(2.0 / (double)ny) * lambda_p * lambda_q;
+            sum *= lambda_p * lambda_q;
             out[p + q * nx] = sum;
         }
     }
@@ -82,10 +82,10 @@ void my_idct(double *out, double *in)
             double sum = 0.0;
             for (int q = 0; q < ny; ++q)
             {
-                double lambda_q = (q == 0) ? std::sqrt(1.0 / 2.0) : 1.0;
+                double lambda_q = (q == 0) ? std::sqrt(1.0 / ny) : std::sqrt(2.0 / ny);
                 for (int p = 0; p < nx; ++p)
                 {
-                    double lambda_p = (p == 0) ? std::sqrt(1.0 / 2.0) : 1.0;
+                    double lambda_p = (p == 0) ? std::sqrt(1.0 / nx) : std::sqrt(2.0 / nx);
                     sum += lambda_p * lambda_q * in[p + q * nx] * std::cos(M_PI * p * (2 * i + 1) / (2 * nx)) * std::cos(M_PI * q * (2 * j + 1) / (2 * ny));
                 }
             }
