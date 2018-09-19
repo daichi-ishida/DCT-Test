@@ -1,5 +1,5 @@
 CXX					:= g++
-BUILD_TYPE			:= Release
+BUILD_TYPE			:= Debug
 
 TARGET				:= main
 
