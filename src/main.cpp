@@ -5,7 +5,6 @@
 #include <vector>
 #include <fftw3.h>
 
-#include <sys/time.h>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -126,7 +125,6 @@ void my_idct(double *out, double *in)
 
 int main()
 {
-    struct timeval s, e;
     double a[nx * ny] = {0.5, 0.6, 0.7, 0.8,
                          1.5, 20.6, 8.7, 1.8,
                          -0.5, -0.6, -2.7, -0.8};
