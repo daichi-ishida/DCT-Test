@@ -5,6 +5,10 @@
 #include <vector>
 #include <fftw3.h>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 int nx = 4;
 int ny = 3;
 
@@ -76,11 +80,14 @@ void my_dct(double *out, double *in)
 {
     for (int q = 0; q < ny; ++q)
     {
-        double lambda_q = (q == 0) ? std::sqrt(1.0 / (double)ny) : std::sqrt(2.0 / (double)ny);
         for (int p = 0; p < nx; ++p)
         {
-            double lambda_p = (p == 0) ? std::sqrt(1.0 / (double)nx) : std::sqrt(2.0 / (double)nx);
+            double lambda_p = (p == 0) ? std::sqrt(1.0 / nx) : std::sqrt(2.0 / nx);
+            double lambda_q = (q == 0) ? std::sqrt(1.0 / ny) : std::sqrt(2.0 / ny);
+
             double sum = 0.0;
+#pragma omp parallel for collapse(2) reduction(+ \
+                                               : sum)
             for (int j = 0; j < ny; ++j)
             {
                 for (int i = 0; i < nx; ++i)
@@ -101,12 +108,15 @@ void my_idct(double *out, double *in)
         for (int i = 0; i < nx; ++i)
         {
             double sum = 0.0;
+#pragma omp parallel for collapse(2) reduction(+ \
+                                               : sum)
             for (int q = 0; q < ny; ++q)
             {
-                double lambda_q = (q == 0) ? std::sqrt(1.0 / (double)ny) : std::sqrt(2.0 / (double)ny);
                 for (int p = 0; p < nx; ++p)
                 {
-                    double lambda_p = (p == 0) ? std::sqrt(1.0 / (double)nx) : std::sqrt(2.0 / (double)nx);
+                    double lambda_p = (p == 0) ? std::sqrt(1.0 / nx) : std::sqrt(2.0 / nx);
+                    double lambda_q = (q == 0) ? std::sqrt(1.0 / ny) : std::sqrt(2.0 / ny);
+
                     sum += lambda_p * lambda_q * in[p + q * nx] * std::cos(M_PI * p * (2 * i + 1) / (2 * nx)) * std::cos(M_PI * q * (2 * j + 1) / (2 * ny));
                 }
             }
@@ -120,10 +130,7 @@ int main()
     double a[nx * ny] = {0.5, 0.6, 0.7, 0.8,
                          1.5, 20.6, 8.7, 1.8,
                          -0.5, -0.6, -2.7, -0.8};
-    // double a[nx * ny] = {1.0, 0.0, 1.0, 0.0,
-    //                      -1.0, 1.0, 0.0, -1.0,
-    //                      1.0, 0.0, 1.0, 0.0,
-    //                      1.0, 1.0, 0.0, 1.0};
+
     double b[nx * ny];
     printf("Original vector\n");
     dump_vector(a);
@@ -132,16 +139,16 @@ int main()
     fftw_dct(b, a);
     dump_vector(b);
 
-    // printf("fftw IDCT\n");
+    printf("fftw IDCT\n");
     fftw_idct(a, b);
-    // dump_vector(a);
+    dump_vector(a);
 
     printf("my DCT\n");
     my_dct(b, a);
     dump_vector(b);
 
-    // printf("my IDCT\n");
+    printf("my IDCT\n");
     my_idct(a, b);
-    // dump_vector(a);
+    dump_vector(a);
     return 0;
 }
