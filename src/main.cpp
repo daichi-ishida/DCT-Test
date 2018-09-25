@@ -5,6 +5,7 @@
 #include <vector>
 #include <fftw3.h>
 
+#include <sys/time.h>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -80,11 +81,10 @@ void my_dct(double *out, double *in)
 {
     for (int q = 0; q < ny; ++q)
     {
+        double lambda_q = (q == 0) ? std::sqrt(1.0 / ny) : std::sqrt(2.0 / ny);
         for (int p = 0; p < nx; ++p)
         {
             double lambda_p = (p == 0) ? std::sqrt(1.0 / nx) : std::sqrt(2.0 / nx);
-            double lambda_q = (q == 0) ? std::sqrt(1.0 / ny) : std::sqrt(2.0 / ny);
-
             double sum = 0.0;
 #pragma omp parallel for collapse(2) reduction(+ \
                                                : sum)
@@ -116,7 +116,6 @@ void my_idct(double *out, double *in)
                 {
                     double lambda_p = (p == 0) ? std::sqrt(1.0 / nx) : std::sqrt(2.0 / nx);
                     double lambda_q = (q == 0) ? std::sqrt(1.0 / ny) : std::sqrt(2.0 / ny);
-
                     sum += lambda_p * lambda_q * in[p + q * nx] * std::cos(M_PI * p * (2 * i + 1) / (2 * nx)) * std::cos(M_PI * q * (2 * j + 1) / (2 * ny));
                 }
             }
@@ -127,6 +126,7 @@ void my_idct(double *out, double *in)
 
 int main()
 {
+    struct timeval s, e;
     double a[nx * ny] = {0.5, 0.6, 0.7, 0.8,
                          1.5, 20.6, 8.7, 1.8,
                          -0.5, -0.6, -2.7, -0.8};
