@@ -9,8 +9,11 @@
 #include <omp.h>
 #endif
 
-int nx = 4;
-int ny = 3;
+int nx = 8;
+int ny = 1;
+
+int dct_x = 4;
+int dct_y = 1;
 
 void dump_vector(double *vec)
 {
@@ -123,11 +126,61 @@ void my_idct(double *out, double *in)
     }
 }
 
+void gpu_dct(double *out, const int pIdx, const int qIdx, double *in)
+{
+    if(pIdx >= dct_x || qIdx >= dct_y)
+    {
+        return;
+    }
+    double sum = 0.0;
+
+    double lambda_p = (pIdx == 0) ? std::sqrt(1.0 / (double)nx) : std::sqrt(2.0 / (double)nx);
+    double lambda_q = (qIdx == 0) ? std::sqrt(1.0 / (double)ny) : std::sqrt(2.0 / (double)ny);
+
+    for (int j = 0; j < ny; ++j)
+    {
+        double cosy = std::cos(M_PI * (double)(qIdx * (2 * j + 1)) / (double)(2 * ny));
+        for (int i = 0; i < nx; ++i)
+        {
+            double cosx = std::cos(M_PI * (double)(pIdx * (2 * i + 1)) / (double)(2 * nx));
+            sum += in[i + j * nx] * cosx * cosy;
+        }
+    }
+    sum *= lambda_p * lambda_q;
+    out[pIdx + qIdx * dct_x] = sum;
+}
+
+void gpu_idct(double *out, const int xIdx, const int yIdx, double *in)
+{
+    double sum = 0.0;
+
+    for (int q = 0, index = 0; q < dct_y; ++q)
+    {
+        double lambda_q = (q == 0) ? std::sqrt(1.0 / (double)ny) : std::sqrt(2.0 / (double)ny);
+        double cosy = lambda_q * std::cos(M_PI * (double)(q * (2 * yIdx + 1)) / (double)(2 * ny));
+        for (int p = 0; p < dct_x; ++p, ++index)
+        {
+            double lambda_p = (p == 0) ? std::sqrt(1.0 / (double)nx) : std::sqrt(2.0 / (double)nx);
+            double cosx = lambda_p * std::cos(M_PI * (double)(p * (2 * xIdx + 1)) / (double)(2 * nx));
+            sum += in[index] * cosx * cosy;
+        }
+    }
+    out[xIdx + yIdx * nx] = sum;
+}
+
 int main()
 {
-    double a[nx * ny] = {0.5, 0.6, 0.7, 0.8,
-                         1.5, 20.6, 8.7, 1.8,
-                         -0.5, -0.6, -2.7, -0.8};
+    // double a[nx * ny] = {0.5, 0.6, 0.7, 0.8,
+    //                      1.5, 20.6, 8.7, 1.8,
+    //                      -0.5, -0.6, -2.7, -0.8,
+    //                      1.0, 1.0, 1.0, 1.0};
+
+    double a[nx*ny];
+    for(int j = 0; j < ny; ++j)
+    for(int i = 0; i < nx; ++i)
+    {
+        a[i+j*nx] = 4.0 * std::sin(i+j*nx);
+    }
 
     double b[nx * ny];
     printf("Original vector\n");
@@ -141,12 +194,28 @@ int main()
     fftw_idct(a, b);
     dump_vector(a);
 
-    printf("my DCT\n");
-    my_dct(b, a);
+    printf("my gpu DCT\n");
+    for (int y = 0; y < ny; ++y)
+    for (int x = 0; x < nx; ++x)
+    {
+        gpu_dct(b, x, y, a);
+    }
     dump_vector(b);
 
-    printf("my IDCT\n");
-    my_idct(a, b);
+    printf("my gpu IDCT\n");
+    for (int y = 0; y < ny; ++y)
+    for (int x = 0; x < nx; ++x)
+    {
+        gpu_idct(a, x, y, b);
+    }
     dump_vector(a);
+
+    // printf("my DCT\n");
+    // my_dct(b, a);
+    // dump_vector(b);
+
+    // printf("my IDCT\n");
+    // my_idct(a, b);
+    // dump_vector(a);
     return 0;
 }
